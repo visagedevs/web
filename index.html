@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>visage</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+
+	<body>
+        <div style="z-index:4; width:100vw; height:100vh; margin:0px;">
+            <div style="z-index:5; position:absolute; margin-left:25px; top:0;">
+                <h1 class='titleA' style="font-family:Future Tech; display:inline-flex; font-size:75px; color:rgb(255, 18, 17)"> VISAGE </h1>
+                <h1 style="font-family:helvetica; display:inline-flex; font-size:25px; margin-left:10px;color:rgb(255, 18, 17)"> defend your privacy </h1>
+            </div>
+            <div class="container">
+                <details open="false">
+                <summary>details</summary>
+                <div class="folder">
+                    <p>about the project</p>
+                    <p>preventing deep learning data mining </p>
+                    <details >
+                        <summary>roadmap</summary>
+                            <div class="folder">
+                                <details>
+                                    <summary>stage 1 (seed round)</summary>
+                                        <div class="folder">
+                                            <p>complete whitepaper</p>
+                                            <p>alpha testing pre-release</p>
+                                        </div>
+                                </details>
+                                <details open="open">
+                                    <summary>stage 2 (alpha launch)</summary>
+                                        <div class="folder">
+                                            <p>open alpha</p>
+                                            <p>penetration testing with bounty</p>
+                                        </div>
+                                </details>
+                                <details>
+                                    <summary>stage 3 (open beta)</summary>
+                                        <div class="folder">
+                                            <p>open beta+ testing</p>
+                                            <p>privacy router presale</p>
+                                        </div>
+                                </details>
+                            </div>
+                    </details>
+                    <details open="open">
+                        <summary>tokenomics</summary>
+                            <div class="folder">
+                                <p>5% buy</p>
+                                <p>5% sell</p>
+                            </div>
+                    </details>
+                    <details >
+                        <summary>socials</summary>
+                            <div class="folder">
+                                <p>twitter</p>
+                                <p>etherscan</p>
+                                <p>github</p>
+                            </div>
+                    </details>
+                </div>
+                </details>
+            </div>
+        </div>
+
+
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+
+		<script type="importmap">
+			{
+                "imports": {
+                    "three": "https://unpkg.com/three@0.143.0/build/three.module.js"
+                }
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { GLTFLoader } from "https://unpkg.com/three@0.143.0/examples/jsm/loaders/GLTFLoader.js";
+			import { TextureLoader} from "https://unpkg.com/three@0.143.0/src/loaders/TextureLoader.js";
+            import { OrbitControls } from "https://unpkg.com/three@0.143.0/examples/jsm/controls/OrbitControls.js"
+			import { RGBELoader } from "https://unpkg.com/three@0.143.0/examples/jsm/loaders/RGBELoader.js";
+
+			let mesh, renderer, scene, camera, controls, mousecoords;
+			let gui, guiExposure = null;
+            let mouse;
+
+            let target = new THREE.Vector3();
+            let mouseX = 0, mouseY = 0;
+            let windowHalfX = window.innerWidth / 2;
+            let windowHalfY = window.innerHeight / 2;
+
+			const params = {
+				exposure: 1.0,
+				toneMapping: 'ACESFilmic'
+			};
+
+			const toneMappingOptions = {
+				None: THREE.NoToneMapping,
+				Linear: THREE.LinearToneMapping,
+				Reinhard: THREE.ReinhardToneMapping,
+				Cineon: THREE.CineonToneMapping,
+				ACESFilmic: THREE.ACESFilmicToneMapping,
+				Custom: THREE.CustomToneMapping
+			};
+
+			init().catch( function ( err ) {
+
+				console.error( err );
+
+			} );
+
+			async function init() {
+
+				renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+                renderer.setClearColor(0xffffff, 0);
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				renderer.toneMapping = toneMappingOptions[ params.toneMapping ];
+				renderer.toneMappingExposure = params.exposure;
+
+				renderer.outputEncoding = THREE.sRGBEncoding;
+
+				// Set CustomToneMapping to Uncharted2
+				// source: http://filmicworlds.com/blog/filmic-tonemapping-operators/
+
+				THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+					'vec3 CustomToneMapping( vec3 color ) { return color; }',
+					`#define Uncharted2Helper( x ) max( ( ( x * ( 0.15 * x + 0.10 * 0.50 ) + 0.20 * 0.02 ) / ( x * ( 0.15 * x + 0.50 ) + 0.20 * 0.30 ) ) - 0.02 / 0.30, vec3( 0.0 ) )
+					float toneMappingWhitePoint = 1.0;
+					vec3 CustomToneMapping( vec3 color ) {
+						color *= toneMappingExposure;
+						return saturate( Uncharted2Helper( color ) / Uncharted2Helper( vec3( toneMappingWhitePoint ) ) );
+					}`
+				);
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+				camera.position.set( -0.6, -0.1, 2.9 );
+
+				// controls = new OrbitControls( camera, renderer.domElement );
+				// controls.addEventListener( 'change', render ); // use if there is no animation loop
+				// controls.enableZoom = false;
+				// controls.enablePan = false;
+				// controls.target.set( 0, 0, - 0.2 );
+				// controls.update();
+
+				const rgbeLoader = new RGBELoader()
+					.setPath( '/textures/' );
+
+				const gltfLoader = new GLTFLoader().setPath( '/gltf/' );
+
+				const [ texture, gltf ] = await Promise.all( [
+					rgbeLoader.loadAsync( 'moonless_golf_1k.hdr' ),
+					gltfLoader.loadAsync( 'damagedhelmet.gltf' ),
+				] );
+
+				// environment
+
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+
+				scene.environment = texture;
+
+				// model
+
+				mesh = gltf.scene.getObjectByName( 'node_damagedHelmet_-6514' );
+				scene.add( mesh );                
+                document.addEventListener( 'mousemove', onDocumentMouseMove );
+                console.log(mesh)
+                model.lookAt(camera.position)
+				window.addEventListener( 'resize', onWindowResize );
+
+                render();
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
+			}
+
+            function onDocumentMouseMove( event ) {
+
+            mouseX = ( event.clientX - windowHalfX );
+            mouseY = ( event.clientY - windowHalfY );
+
+            }
+
+            function animate() {
+                requestAnimationFrame( animate );
+                // target.x += ( mouseX - target.x ) * 0.0002;
+                // target.y += ( - mouseY - target.y ) * 0.0002;
+                // target.z = camera.position.z; // assuming the camera is located at ( 0, 0, z );
+                // mesh.lookAt( target );
+                mesh.rotation.y += ( mouseX - target.x ) * 0.00002;
+                mesh.rotation.x += ( - mouseY - target.y ) * 0.0002;
+
+                renderer.render( scene, camera );
+            }
+            animate();
+
+		</script>
+
+	</body>
+</html>
+<!-- 
+new RGBELoader()
+					.load( 'textures/SPACE-1.hdr', function ( texture, textureData ) {
+
+						const material = new THREE.MeshBasicMaterial( { map: texture } );
+
+						const quad = new THREE.PlaneGeometry( 1.5 * textureData.width / textureData.height, 1.5 );
+
+						const mesh = new THREE.Mesh( quad, material );
+
+						scene.add( mesh );
+
+						render();
+
+					} ); -->
